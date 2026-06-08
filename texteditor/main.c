@@ -146,64 +146,100 @@ void LoadFile(Text* editor) {
         }
     }
 }
-    void PrintText(Text * editor) 
+void PrintText(Text * editor) 
     {
-        int i;
+       int i;
         for (i = 0; i < editor->AmountOfLines; i++) {
             printf("%s\n", editor->lines[i]);
         }
     }
-    void InsertText(struct TextEditor* editor) {
-        int targetLine, targetIndex;
-        printf("> Choose line and index: ");
-        if (scanf("%d %d", &targetLine, &targetIndex) == 2) {
-            while (getchar() != '\n') {
-            }
-            if (targetLine < 0 || targetLine >= editor->AmountOfLines) {
-                printf("> Wrong index\n");
-                return;
-            }
-            int oldLen = getStringLength(editor->lines[targetLine]);
-            if (targetIndex < 0 || targetIndex > oldLen) {
-                printf("> Wrong index\n");
-                return;
-            }
-            char buffer[256];
-            printf("> Enter text to insert: ");
-            if (fgets(buffer, 256, stdin) != NULL) {
-                int i = 0;
-                while (buffer[i] != '\0') {
-                    if (buffer[i] == '\n') {
-                        buffer[i] = '\0';
-                        break;
-                    }
-                    i++;
-                }
-                int insertLen = getStringLength(buffer);
-                if (insertLen > 0) {
-                    editor->lines[targetLine] = realloc(editor->lines[targetLine], (oldLen + insertLen + 1) * sizeof(char));
-                    int j;
-                    for (j = oldLen; j >= targetIndex; j--) {
-                        editor->lines[targetLine][j + insertLen] = editor->lines[targetLine][j];
-                    }
-                    int k;
-                    for (k = 0; k < insertLen; k++) {
-                        editor->lines[targetLine][targetIndex + k] = buffer[k];
-                    }
-                }
-            }
+void InsertText(struct TextEditor* editor) {
+    int targetLine, targetIndex;
+    printf("> Choose line and index: ");
+    if (scanf("%d %d", &targetLine, &targetIndex) == 2) {
+        while (getchar() != '\n') {
         }
-        else {
-            while (getchar() != '\n') {
+        if (targetLine < 0 || targetLine >= editor->AmountOfLines) {
+            printf("> Wrong line\n");
+            return;
+        }
+        int oldLen = getStringLength(editor->lines[targetLine]);
+        if (targetIndex < 0 || targetIndex > oldLen) {
+            printf("> Wrong index\n");
+            return;
+        }
+        char buffer[256];
+        printf("> Enter text to insert: ");
+        if (fgets(buffer, 256, stdin) != NULL) {
+            int i = 0;
+            while (buffer[i] != '\0') {
+                if (buffer[i] == '\n') {
+                    buffer[i] = '\0';
+                    break;
+                }
+                i++;
+            }
+            int insertLen = getStringLength(buffer);
+            if (insertLen > 0) {
+                editor->lines[targetLine] = realloc(editor->lines[targetLine], (oldLen + insertLen + 1) * sizeof(char));
+                int j;
+                for (j = oldLen; j >= targetIndex; j--) {
+                    editor->lines[targetLine][j + insertLen] = editor->lines[targetLine][j];
+                }
+                int k;
+                for (k = 0; k < insertLen; k++) {
+                    editor->lines[targetLine][targetIndex + k] = buffer[k];
+                }
             }
         }
     }
+    else {
+        while (getchar() != '\n') {
+        }
+    }
+}
+void DeleteText(Text* editor) {
+    int line_id;
+    int start_char_id;
+    int num_of_symbols;
+    int len = 0;
+    printf("Choose line index and number of symbols: ");
+    if (scanf("%d %d %d", &line_id, &start_char_id, &num_of_symbols) != 3) {
+        printf("Invalid input\n");
+        return;
+    }
+    if (line_id >= 0 && line_id < editor->AmountOfLines) {
+        char* line = editor->lines[line_id];
+        while (line[len] != '\0') {
+            len++;
+        }
+        if (start_char_id < 0 || start_char_id >= len) {
+            printf("index is too big or too low\n");
+            return;
+        }
+        if (start_char_id + num_of_symbols > len) {
+            num_of_symbols = len - start_char_id;
+        }
+        for (int i = start_char_id;i <= len - num_of_symbols;i++) {
+            line[i] = line[i + num_of_symbols];
+        }
+        int new_len = len - num_of_symbols;
+        editor->lines[line_id] = realloc(editor->lines[line_id], (new_len + 1) * sizeof(char));
+    }
+    else {
+        printf("> Wrong line index\n");
+    }
+}
+
+
+
+
         int main() {
             int command;
             Text editor;
             initText(&editor);
             while (1) {
-                printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7. Exit\n");
+                printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7.Delete text\n8.Exit.\n");
                 if (scanf("%d", &command) != 1) {
                     while (getchar() != '\n') {
                     }
@@ -231,6 +267,9 @@ void LoadFile(Text* editor) {
                     InsertText(&editor); 
                     break;
                 case 7:
+                    DeleteText(&editor);
+                    break;
+                case 8:
                     printf("> Exiting the program. Goodbye!\n");
                     freeText(&editor);
                     return 0;

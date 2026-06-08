@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="texteditor.vcxproj" />
+  <Project Path="texteditor.vcxproj" Id="696d2d99-9f64-4940-bb60-3a3c83d7a289" />
 </Solution>

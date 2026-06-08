@@ -230,52 +230,103 @@ void DeleteText(Text* editor) {
         printf("> Wrong line index\n");
     }
 }
-
-
-
-
-        int main() {
-            int command;
-            Text editor;
-            initText(&editor);
-            while (1) {
-                printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7.Delete text\n8.Exit.\n");
-                if (scanf("%d", &command) != 1) {
-                    while (getchar() != '\n') {
-                    }
-                    continue;
-                }
-                while (getchar() != '\n') {
-                }
-                switch (command) {
-                case 1:
-                    AddText(&editor);
-                    break;
-                case 2:
-                    NewLine(&editor);
-                    break;
-                case 3:
-                    SaveToFile(&editor);
-                    break;
-                case 4:
-                    LoadFile(&editor);
-                    break;
-                case 5:
-                    PrintText(&editor);
-                    break;
-                case 6:
-                    InsertText(&editor); 
-                    break;
-                case 7:
-                    DeleteText(&editor);
-                    break;
-                case 8:
-                    printf("> Exiting the program. Goodbye!\n");
-                    freeText(&editor);
-                    return 0;
-                default:
-                    printf("> The command is not implemented\n");
-                }
+void InsertWithReplacement(Text* editor) {
+    int line_id;
+    int symbol_id;
+    char buffer[256];
+    printf("Choose line and symbol ");
+    if (scanf("%d %d", &line_id, &symbol_id) != 2) {
+        printf("Invalid line or symbol index\n");
+        while (getchar() != '\n');
+        return;
+    }
+    while (getchar() != '\n');
+    if (line_id < 0 || line_id >= editor->AmountOfLines) {
+        printf("> Wrong line index\n");
+        return; 
+    }
+    printf("Enter text to insert.");
+    if (fgets(buffer, 256, stdin) != NULL) {
+        int i = 0;
+        while (buffer[i] != '\0') {
+            if (buffer[i] == '\n') {
+                buffer[i] = '\0';
+                break;
             }
-            return 0;
+            i++;
         }
+        if (line_id >= 0 && line_id < editor->AmountOfLines) {
+            int old_len = 0;
+            char* line = editor->lines[line_id];
+            while (line[old_len] != '\0') {
+                old_len++;
+            }
+
+            int insert_len = 0;
+            while (buffer[insert_len] != '\0') {
+                insert_len++;
+            }
+            if (symbol_id < 0 || symbol_id > old_len) {
+                printf("Incorrect symbol id.\n");
+                return;
+            }
+            if (symbol_id + insert_len > old_len) {
+                int new_len = symbol_id + insert_len;
+                editor->lines[line_id] = realloc(editor->lines[line_id], (new_len + 1) * sizeof(char));
+                line = editor->lines[line_id];
+                line[new_len] = '\0';
+            }
+            for (int i = 0; i < insert_len; i++) {
+                line[symbol_id + i] = buffer[i];
+            }
+        }
+    }
+}
+int main() {
+    int command;
+    Text editor;
+    initText(&editor);
+    while (1) {
+        printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7.Delete text\n8.Insert with replacement.\n9.Exit\n");
+        if (scanf("%d", &command) != 1) {
+            while (getchar() != '\n') {
+            }
+            continue;
+        }
+        while (getchar() != '\n') {
+        }
+        switch (command) {
+        case 1:
+            AddText(&editor);
+            break;
+        case 2:
+            NewLine(&editor);
+            break;
+        case 3:
+            SaveToFile(&editor);
+            break;
+        case 4:
+            LoadFile(&editor);
+            break;
+        case 5:
+            PrintText(&editor);
+            break;
+        case 6:
+            InsertText(&editor);
+            break;
+        case 7:
+            DeleteText(&editor);
+            break;
+        case 8:
+            InsertWithReplacement(&editor);
+            break;
+        case 9:
+            printf("> Exiting the program. Goodbye!\n");
+            freeText(&editor);  
+            return 0;
+        default:
+            printf("> The command is not implemented\n");
+        }
+    }
+    return 0;
+}

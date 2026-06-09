@@ -7,6 +7,7 @@ typedef struct TextEditor {
     int AmountOfLines;
     int capacity;
 }Text;
+
 void initText(Text* t) {
     t->AmountOfLines = 1;
     t->capacity = 5;
@@ -14,12 +15,14 @@ void initText(Text* t) {
     t->lines[0] = malloc(1 * sizeof(char));
     t->lines[0][0] = '\0';
 }
+
 void freeText(Text* t) {
     for (int i = 0; i < t->AmountOfLines; i++) {
         free(t->lines[i]);
     }
     free(t->lines);
 }
+
 int getStringLength(char* str) {
     int len = 0;
     while (str[len] != '\0') {
@@ -27,6 +30,7 @@ int getStringLength(char* str) {
     }
     return len;
 }
+
 void AddText(Text* editor) {
     char buffer[256];
     printf("> Enter text to append:\n");
@@ -51,6 +55,7 @@ void AddText(Text* editor) {
         editor->lines[currentLine][oldLen + j] = '\0';
     }
 }
+
 void NewLine(Text* editor) {
     if (editor->AmountOfLines >= editor->capacity) {
         editor->capacity = editor->capacity * 2;
@@ -61,6 +66,7 @@ void NewLine(Text* editor) {
     editor->AmountOfLines++;
     printf("> New line started\n");
 }
+
 void SaveToFile(Text* editor) {
     char buffer[256];
     printf("> Enter the file name for saving: ");
@@ -90,6 +96,7 @@ void SaveToFile(Text* editor) {
         }
     }
 }
+
 void LoadFile(Text* editor) {
     char buffer[256];
     printf("> Enter the file name for loading: ");
@@ -146,6 +153,7 @@ void LoadFile(Text* editor) {
         }
     }
 }
+
 void PrintText(Text * editor) 
     {
        int i;
@@ -153,6 +161,7 @@ void PrintText(Text * editor)
             printf("%s\n", editor->lines[i]);
         }
     }
+
 void InsertText(struct TextEditor* editor) {
     int targetLine, targetIndex;
     printf("> Choose line and index: ");
@@ -198,6 +207,7 @@ void InsertText(struct TextEditor* editor) {
         }
     }
 }
+
 void DeleteText(Text* editor) {
     int line_id;
     int start_char_id;
@@ -230,6 +240,7 @@ void DeleteText(Text* editor) {
         printf("> Wrong line index\n");
     }
 }
+
 void InsertWithReplacement(Text* editor) {
     int line_id;
     int symbol_id;
@@ -282,12 +293,194 @@ void InsertWithReplacement(Text* editor) {
         }
     }
 }
+typedef struct TextCopy {
+    char** lines;
+    int AmountOfLines;
+}Copy;
+
+void MakeCopy(Text* editor, Copy* undo_stack, int* undo_count) {
+    int target_index;
+    if (*undo_count < 3) {
+        target_index = *undo_count;
+        (*undo_count)++;
+    }
+    else {
+        for (int i = 0; i < undo_stack[0].AmountOfLines; i++) {
+            free(undo_stack[0].lines[i]);
+        }
+        free(undo_stack[0].lines);
+
+        for (int i = 0; i < 2; i++) {
+            undo_stack[i] = undo_stack[i + 1];
+        }
+        target_index = 2;
+            
+    }
+    undo_stack[target_index].lines = malloc(editor->AmountOfLines * sizeof(char*));
+    undo_stack[target_index].AmountOfLines = editor->AmountOfLines;
+
+    for (int i = 0; i < editor->AmountOfLines; i++) {
+        int len = getStringLength(editor->lines[i]);
+        undo_stack[target_index].lines[i] = malloc((len + 1) * sizeof(char));
+        int j = 0;
+        while (editor->lines[i][j] != '\0') {
+            undo_stack[target_index].lines[i][j] = editor->lines[i][j];
+
+            j++;
+        }
+        undo_stack[target_index].lines[i][j] = '\0';
+    }
+}
+
+void Undo(Text* editor, Copy* undo_stack, int* undo_count, Copy* redo_stack, int* redo_count) {
+    if (*undo_count == 0) {
+        printf("Nothing to undo\n");
+        return;
+    }
+    MakeCopy(editor, redo_stack, redo_count);
+    int last_index = *undo_count - 1;
+    freeText(editor);
+    editor->AmountOfLines = undo_stack[last_index].AmountOfLines;
+    editor->lines = undo_stack[last_index].lines;
+    editor->capacity = undo_stack[last_index].AmountOfLines;;
+    (*undo_count)--;
+    printf("successfully\n");
+}
+
+void Redo(Text* editor, Copy* undo_stack, int* undo_count, Copy* redo_stack, int* redo_count) {
+    if (*redo_count == 0) {
+        printf("Nothing to redo\n");
+        return;
+    }
+    MakeCopy(editor, undo_stack, undo_count);
+    int last_redo_index = *redo_count - 1;
+    freeText(editor);
+    editor->AmountOfLines = redo_stack[last_redo_index].AmountOfLines;
+    editor->lines = redo_stack[last_redo_index].lines;
+    editor->capacity = redo_stack[last_redo_index].AmountOfLines;
+    (*redo_count)--;
+    printf("successfully\n");
+}
+
+void CopyText(Text* editor, char** clipboard) {
+    int line_id, start_char_id, num_of_symbols;
+    printf("Choose line, start index and number of symbols to copy: ");
+    if (scanf("%d %d %d", &line_id, &start_char_id, &num_of_symbols) != 3) {
+        printf("> Invalid input\n");
+        while (getchar() != '\n');
+        return;
+    }
+    while (getchar() != '\n');
+
+    if (line_id < 0 || line_id >= editor->AmountOfLines) {
+        printf("> Wrong index\n");
+        return;
+    }
+
+    int len = getStringLength(editor->lines[line_id]);
+    if (start_char_id < 0 || start_char_id >= len) {
+        printf("> Wrong index\n");
+        return;
+    }
+    if (start_char_id + num_of_symbols > len) {
+        num_of_symbols = len - start_char_id; 
+    }
+    if (*clipboard != NULL) {
+        free(*clipboard);
+    }
+    *clipboard = malloc((num_of_symbols + 1) * sizeof(char));
+    for (int i = 0; i < num_of_symbols; i++) {
+        (*clipboard)[i] = editor->lines[line_id][start_char_id + i];
+    }
+    (*clipboard)[num_of_symbols] = '\0';
+    printf("> Text copied\n");
+}
+
+void PasteText(Text* editor, char* clipboard) {
+    if (clipboard == NULL) {
+        printf("> Clipboard is empty\n");
+        return;
+    }
+
+    int line_id, start_char_id;
+    printf("Choose line  and start index to paste: ");
+    if (scanf("%d %d", &line_id, &start_char_id) != 2) {
+        printf("> Invalid input\n");
+        while (getchar() != '\n');
+        return;
+    }
+    while (getchar() != '\n');
+
+    if (line_id < 0 || line_id >= editor->AmountOfLines) {
+        printf("> Wrong index\n");
+        return;
+    }
+
+    int old_len = getStringLength(editor->lines[line_id]);
+    if (start_char_id < 0 || start_char_id > old_len) {
+        printf("> Wrong index\n");
+        return;
+    }
+    int clipboard_len = getStringLength(clipboard);
+    editor->lines[line_id] = realloc(editor->lines[line_id], (old_len + clipboard_len + 1) * sizeof(char));
+    for (int i = old_len; i >= start_char_id; i--) {
+        editor->lines[line_id][i + clipboard_len] = editor->lines[line_id][i];
+    }
+    for (int i = 0; i < clipboard_len; i++) {
+        editor->lines[line_id][start_char_id + i] = clipboard[i];
+    }
+    printf("> Text pasted\n");
+}
+
+void CutText(Text* editor, char** clipboard) {
+    int line_id, start_char_id, num_of_symbols;
+    printf("Choose line , start index and number of symbols to cut: ");
+    if (scanf("%d %d %d", &line_id, &start_char_id, &num_of_symbols) != 3) {
+        printf("> Invalid input\n");
+        while (getchar() != '\n');
+        return;
+    }
+    while (getchar() != '\n');
+
+    if (line_id < 0 || line_id >= editor->AmountOfLines) {
+        printf("> Wrong index\n");
+        return;
+    }
+
+    int len = getStringLength(editor->lines[line_id]);
+    if (start_char_id < 0 || start_char_id >= len) {
+        printf("> Wrong index\n");
+        return;
+    }
+    if (start_char_id + num_of_symbols > len) {
+        num_of_symbols = len - start_char_id;
+    }
+    if (*clipboard != NULL) {
+        free(*clipboard);
+    }
+    *clipboard = malloc((num_of_symbols + 1) * sizeof(char));
+    for (int i = 0; i < num_of_symbols; i++) {
+        (*clipboard)[i] = editor->lines[line_id][start_char_id + i];
+    }
+    (*clipboard)[num_of_symbols] = '\0';
+    for (int i = start_char_id; i <= len - num_of_symbols; i++) {
+        editor->lines[line_id][i] = editor->lines[line_id][i + num_of_symbols];
+    }
+    int new_len = len - num_of_symbols;
+    editor->lines[line_id] = realloc(editor->lines[line_id], (new_len + 1) * sizeof(char));
+    printf("> Text cut\n");
+}
 int main() {
     int command;
     Text editor;
     initText(&editor);
+    Copy undo_stack[3];
+    int undo_count = 0;
+    Copy redo_stack[3];
+    int redo_count = 0;
+    char* clipboard = NULL;
     while (1) {
-        printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7.Delete text\n8.Insert with replacement.\n9.Exit\n");
+        printf("\n> Choose the command:\n1. Add text\n2. New line\n3. Save to file\n4. Load from file\n5. Print all text\n6.InsertText\n7.Delete text\n8.Insert with replacement.\n9.Undo\n10.Redo\n11.Copy\n12.Paste\n13.Cut\n14.Exit\n");
         if (scanf("%d", &command) != 1) {
             while (getchar() != '\n') {
             }
@@ -297,9 +490,13 @@ int main() {
         }
         switch (command) {
         case 1:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
             AddText(&editor);
             break;
         case 2:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
             NewLine(&editor);
             break;
         case 3:
@@ -312,21 +509,52 @@ int main() {
             PrintText(&editor);
             break;
         case 6:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
             InsertText(&editor);
             break;
         case 7:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
             DeleteText(&editor);
             break;
         case 8:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
             InsertWithReplacement(&editor);
             break;
         case 9:
+            Undo(&editor, undo_stack, &undo_count, redo_stack, &redo_count);
+            break;
+        case 10:
+            Redo(&editor, undo_stack, &undo_count, redo_stack, &redo_count);
+            break;
+        case 11:
+            CopyText(&editor, &clipboard);
+            break;
+
+        case 12:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count); 
+            PasteText(&editor, clipboard);
+            break;
+
+        case 13:
+            redo_count = 0;
+            MakeCopy(&editor, undo_stack, &undo_count);
+            CutText(&editor, &clipboard);
+            break;
+
+        case 14:
             printf("> Exiting the program. Goodbye!\n");
-            freeText(&editor);  
+            if (clipboard != NULL) {
+                free(clipboard);
+            }
             return 0;
         default:
             printf("> The command is not implemented\n");
         }
     }
+    if (clipboard != NULL) free(clipboard);
     return 0;
 }

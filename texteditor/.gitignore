@@ -427,3 +427,25 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Visual Studio
+.vs/
+x64/
+Debug/
+Release/
+*.user
+*.suo
+*.db
+*.ipch
+*.pdb
+*.ilk
+*.obj
+*.exe
+*.tlog
+*.recipe
+*.lastbuildstate
+*.log
+*.idb
+*.iobj
+*.ipdb
+FileContentIndex/

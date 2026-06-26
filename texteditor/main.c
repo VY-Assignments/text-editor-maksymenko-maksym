@@ -293,6 +293,7 @@ void InsertWithReplacement(Text* editor) {
         }
     }
 }
+
 typedef struct TextCopy {
     char** lines;
     int AmountOfLines;

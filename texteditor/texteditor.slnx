@@ -3,5 +3,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="../cipher_app/cipher_app.vcxproj" Id="a3f3846c-a38a-4d65-85fe-f8bb40737b7b" />
+  <Project Path="../Encryption/Encryption.vcxproj" Id="d3f4b60c-71f3-4bd5-a03a-dc238efab1ad" />
   <Project Path="texteditor.vcxproj" Id="696d2d99-9f64-4940-bb60-3a3c83d7a289" />
 </Solution>

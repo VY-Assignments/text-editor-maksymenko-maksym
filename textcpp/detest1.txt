@@ -1,0 +1,3 @@
+CHECKLIST|1|task
+TEXT|text
+CONTACT|contact|contactsur|mail
